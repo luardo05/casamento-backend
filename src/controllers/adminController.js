@@ -2,6 +2,7 @@ const Admin = require('../models/Admin');
 const Guest = require('../models/Guest');
 const Gift = require('../models/Gift');
 const jwt = require('jsonwebtoken');
+const CustomGift = require('../models/CustomGift');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -70,10 +71,21 @@ const getGuestsReport = async (req, res) => {
   }
 };
 
+// const getGiftsReport = async (req, res) => {
+//   try {
+//     const gifts = await Gift.find({});
+//     res.json(gifts);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Erro ao buscar presentes' });
+//   }
+// };
+
 const getGiftsReport = async (req, res) => {
   try {
-    const gifts = await Gift.find({});
-    res.json(gifts);
+    const standardGifts = await Gift.find({});
+    const customGifts = await CustomGift.find({}).sort({ date: -1 }); // Mais recentes primeiro
+    
+    res.json({ standard: standardGifts, custom: customGifts });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao buscar presentes' });
   }

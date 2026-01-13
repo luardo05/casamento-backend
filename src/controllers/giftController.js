@@ -1,4 +1,5 @@
 const giftService = require('../services/giftService');
+const CustomGift = require('../models/CustomGift');
 
 // GET /api/gifts
 const listGifts = async (req, res) => {
@@ -37,8 +38,27 @@ const pickGift = async (req, res) => {
   }
 };
 
+const sendCustomGift = async (req, res) => {
+  try {
+    const { message } = req.body;
+    const guest = req.guest; // Vem do middleware
+
+    if (!message) return res.status(400).json({ message: 'Escreva qual é o presente.' });
+
+    await CustomGift.create({
+      guestId: guest._id,
+      guestName: guest.plusOne ? `${guest.name} e ${guest.plusOne}` : guest.name,
+      message
+    });
+
+    res.status(201).json({ message: 'Presente enviado com sucesso!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao enviar presente.' });
+  }
+};
 module.exports = {
   listGifts,
   createGift,
-  pickGift
+  pickGift,
+  sendCustomGift
 };
