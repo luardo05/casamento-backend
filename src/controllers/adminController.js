@@ -91,9 +91,56 @@ const getGiftsReport = async (req, res) => {
   }
 };
 
+const deleteGuest = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Acha o convidado
+    const guest = await Guest.findById(id);
+    if (!guest) return res.status(404).json({ message: 'Convidado não encontrado' });
+
+    // 2. Remove o convidado da lista de "chosenBy" em TODOS os presentes que ele escolheu
+    await Gift.updateMany(
+      { "chosenBy.guestId": guest._id },
+      { $pull: { chosenBy: { guestId: guest._id } } }
+    );
+
+    // 3. Remove presentes customizados (escritos) desse convidado
+    await CustomGift.deleteMany({ guestId: guest._id });
+
+    // 4. Deleta o convidado
+    await Guest.findByIdAndDelete(id);
+
+    res.json({ message: 'Convidado removido e presentes liberados!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao deletar convidado.' });
+  }
+};
+
+
+const resetSystem = async (req, res) => {
+  try {
+    // 1. Apaga todos os convidados
+    await Guest.deleteMany({});
+    
+    // 2. Limpa o array 'chosenBy' de TODOS os presentes 
+    await Gift.updateMany({}, { $set: { chosenBy: [] } });
+
+    // 3. Apaga presentes customizados
+    await CustomGift.deleteMany({});
+
+    res.json({ message: 'Sistema resetado com sucesso! Tudo zerado.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao resetar sistema.' });
+  }
+};
+
 module.exports = {
   registerAdmin,
   loginAdmin,
   getGuestsReport,
-  getGiftsReport
+  getGiftsReport,
+  deleteGuest, 
+  resetSystem 
 };
